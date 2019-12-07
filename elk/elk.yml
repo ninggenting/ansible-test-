@@ -1,0 +1,49 @@
+---
+- name: es
+  tags: es
+  hosts: es
+  tasks:
+   - name: es cluster
+     yum: 
+       name: elasticsearch,java-1.8.0-openjdk
+       state: present
+   - name: es.yml
+     template:
+       src: elasticsearch.yml
+       dest: /etc/elasticsearch/elasticsearch.yml
+   - name: service
+     service:
+       name: elasticsearch
+       state: started 
+- name: plugin
+  hosts: 192.168.1.71
+  tasks:
+   - name: plugin
+     shell: /usr/share/elasticsearch/bin/plugin install ftp://192.168.1.252/soft/bigdesk-master.zip;/usr/share/elasticsearch/bin/plugin install ftp://192.168.1.252/soft/elasticsearch-head-master.zip;/usr/share/elasticsearch/bin/plugin install ftp://192.168.1.252/soft/elasticsearch-kopf-master.zip
+- name: logstash
+  hosts: logstash
+  tasks:
+   - name: jdk
+     yum:
+       name: java-1.8.0-openjdk,logstash
+       state: present
+   - name: logstash
+     copy:
+       src: logstash.conf
+       dest: /etc/logstash/
+- name: filebeat
+  hosts: web
+  tags: fi
+  tasks:
+   - name: filebeat
+     yum: 
+       name: filebeat
+       state: present
+   - name: filebeat.yml
+     copy: 
+       src: filebeat.yml
+       dest: /etc/filebeat/
+   - name: service
+     service:
+       name: filebeat
+       state: restarted

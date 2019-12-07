@@ -1,0 +1,100 @@
+---
+- name: mysql
+  hosts: mysql1
+  tasks:
+   - name: conf
+     template:
+       src: my1.cnf
+       dest: /etc/my.cnf
+       mode: 0644
+   - name: dir
+     copy:
+       src: mysql/
+       dest: /var/lib/mysql/
+       owner: mysql
+       group: mysql
+       mode: 0644 
+   - name: service
+     service: 
+       name: mysqld
+       state: started
+       enabled: yes
+- name: mysql2
+  hosts: mysql2
+  tasks:
+   - name: conf2
+     template:
+       src: my2.cnf
+       dest: /etc/my.cnf
+       mode: 0644
+   - name: dir2
+     copy:
+       src: mysql/
+       dest: /var/lib/mysql/
+       owner: mysql
+       group: mysql
+       mode: 0644 
+   - name: rm uuid
+     file:
+       path: /var/lib/mysql/auto.cnf
+       state: absent
+   - name: service2
+     service: 
+       name: mysqld
+       state: started
+       enabled: yes
+- name: mhaman
+  tags: mha
+  hosts: mhaman
+  tasks:
+   - name: yum
+     yum:
+       name: perl-ExtUtils*,perl-CPAN*
+   - name: rpm
+     copy:
+       src: perlrpm/
+       dest: /root/perlrpm/
+   - name: perl
+     shell: yum -y install /root/perlrpm/*.rpm
+     ignore_errors: yes
+   - name:  man.tar
+     unarchive:
+       src: mha4mysql-manager-0.56.tar.gz
+       dest:  /root/
+   - name: setup man
+     shell: cd mha4mysql-manager-0.56;perl Makefile.PL;make && make install;mkdir /etc/mha
+     ignore_errors: yes
+   - name: conf
+     copy:
+       src: mhaconf/
+       dest: /etc/mha/
+   - name: +x
+     shell: chmod +x /etc/mha/master_ip_failover
+- name: ssh-key
+  tags: ssh
+  hosts: a
+  tasks:
+   - name: id_rsa
+     copy:
+       src: id_rsa
+       dest: /root/.ssh/
+       mode: 0400
+   - name: sshconfig
+     copy:
+       src: ssh_config
+       dest: /etc/ssh/
+   - name: sshd
+     service:
+       name: sshd
+       state: restarted
+- name: noderpm
+  hosts: a
+  tags: node
+  tasks:
+   - name: node.rpm
+     copy:
+       src: mha4mysql-node-0.56-0.el6.noarch.rpm
+       dest: /root/
+   - name: yum node
+     shell: yum -y install /root/mha4mysql-node-0.56-0.el6.noarch.rpm
+     ignore_errors: yes

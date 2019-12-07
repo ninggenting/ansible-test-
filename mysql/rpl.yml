@@ -1,0 +1,46 @@
+---
+- name: yum
+  tags: r0
+  hosts: repl2
+  tasks:
+   - name: yum 
+     yum:
+       name: MySQL-python
+       state: present
+   - copy: 
+       src: .my.cnf
+       dest: /root/
+- name: replication
+  tags: r1
+  hosts: repl1
+  tasks:
+   - name: vip
+     shell: ifconfig eth0:1 192.168.1.40
+   - name: repluser
+     mysql_user:
+       name: repluser
+       host: "%"
+       password: 1234
+       priv: "*.*:REPLICATION SLAVE,REPLICATION CLIENT"
+       state: present
+   - name: root
+     mysql_user:
+       name: root
+       host: "%"
+       password: 1234
+       priv: "*.*:ALL"
+       state: present
+- name: slave
+  hosts: repl3
+  tasks:
+   - name: slave
+     mysql_replication:
+       mode: changemaster
+       master_host: 192.168.1.41
+       master_user: repluser
+       master_password: 1234
+       master_log_file: mysql41.000001
+       master_log_pos: 414
+   - name: start slave
+     mysql_replication:
+       mode: startslave

@@ -1,0 +1,16 @@
+---
+- name: mycat
+  hosts: mycat
+  tasks:
+   - name: mycat.tar
+     unarchive:
+       src: Mycat-server-1.6-RELEASE-20161028204710-linux.tar.gz
+       dest: /usr/local/
+   - name: openjdk
+     yum:
+       name: java-1.8.0-openjdk.x86_64
+       state: present
+   - name: schema.xml
+     copy: 
+       src: schema.xml
+       dest: /usr/local/mycat/conf/

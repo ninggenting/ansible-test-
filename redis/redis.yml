@@ -1,0 +1,56 @@
+---
+- name: redis setup
+  hosts: redis
+  tasks:
+   - name: gcc
+     yum:
+       name: gcc
+       state: present
+   - name: tar
+     unarchive:
+       src: redis-4.0.8.tar.gz
+       dest: /root/
+   - name: make
+     shell: cd /root/redis-4.0.8;make && make install && mkdir /etc/redis 
+     ignore_errors: yes
+   - name: redis
+     shell: echo "\n\n\n\n\n\n" > /tmp/1;/root/redis-4.0.8/utils/install_server.sh  < /tmp/1
+   - name: copy conf
+     template:
+       src: 6379.conf
+       dest: /etc/redis/6379.conf
+   - name: redis_6379
+     template:
+       src: redis_6379
+       dest: /etc/init.d/redis_6379
+       mode: 0755
+   - name: kill 
+     shell: kill $(cat /var/run/redis_6379.pid)
+     ignore_errors: yes
+   - name: service
+     shell: redis-server /etc/redis/6379.conf
+- name: redis-cluster 
+  hosts: web
+  tasks:
+   - name: redis-cluster.tar
+     unarchive:
+       src: redis-cluster-4.3.0.tgz
+       dest: /root/
+   - name: php-devel,php,php-fpm
+     yum: 
+       name: php,php-devel,php-fpm
+       state: present
+       update_cache: yes
+   - name: make
+     shell: cd redis-4.3.0;/usr/bin/phpize;./configure --with-php-config=/usr/bin/php-config;make && make install
+   - name: php.ini
+     copy:
+       src: php.ini
+       dest: /etc/php.ini
+     notify: reload_php
+  handlers:
+   - name: reload_php
+     service:
+       name: php-fpm
+       state: restarted
+       enabled: yes

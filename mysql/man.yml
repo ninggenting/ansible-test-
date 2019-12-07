@@ -1,0 +1,25 @@
+---
+- name: mhaman
+  hosts: mhaman
+  tasks:
+   - name: yum
+     yum:
+       name: perl-ExtUtils*
+       state: present
+   - name: rpm
+     copy:
+       src: perlrpm/
+       dest: /root/perlrpm/
+   - name: perl
+     shell: yum -y install /root/perlrpm/*.rpm
+     ignore_errors: yes
+   - name:  man.tar
+     unarchive:
+       src: mha4mysql-manager-0.56.tar.gz
+       dest:  /root/
+   - name: setup man
+     shell: cd mha4mysql-manager-0.56;perl Makefile.PL;make && make install;mkdir /etc/mha
+   - name: conf
+     copy:
+       src: mhaconf/
+       dest: /etc/mha/
