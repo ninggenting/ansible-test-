@@ -1,0 +1,60 @@
+---
+- hosts: lv01
+  tasks:
+    - yum:
+        name: lvm2
+        state: intelled
+    - name: Create a new primary partition with a size of 1000MiB
+      parted:
+        device: /dev/vdb
+        number: 1
+        state: present
+        part_end: 1000MiB
+    - name: Create a volume group on top of /dev/sdb with physical extent size = 128KiB
+      lvg:
+        vg: datestore
+        pvs: /dev/vdb1
+        pesize: 128K
+- hosts: lv02
+  tasks:
+    - name: Create a new primary partition with a size of 500MiB
+      parted:
+        device: /dev/vdb
+        number: 1
+        state: present
+        part_end: 500MiB
+    - name: Create a new primary partition with a size of 500MiB
+      parted:
+        device: /dev/vdb
+        number: 2
+        state: present
+        part_start: 500MiB
+        part_end: 1000MiB
+    - name: Create a volume group on top of /dev/sdb with physical extent size = 128KiB
+      lvg:
+        vg: datestore
+        pvs: /dev/vdb1
+        pesize: 128K
+- hosts: lvs
+  tasks: 
+    - name: Create a logical volume of 800m with disks /dev/vdb1
+      block:
+        lvol:
+          vg: datestore
+          lv: test
+          size: 800M
+          pvs: /dev/vdb1   
+    - name: Create a volume extend
+      rescue: 
+         debug:
+           msg: Create volume  "not enough size" 
+           msg: Extend volume.......
+         name: Create or resize a volume group 
+         lvg:
+           vg: datestore
+           pvs: /dev/vdb1,/dev/vdb2
+    - name: search lvs
+      debug:
+        msg: volume not find
+      when: "'datestore' not in ansible_facts.lvm.vgs"
+ 
